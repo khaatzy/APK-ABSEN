@@ -1,0 +1,40 @@
+[debug] [2026-10-10T03:41:48.195Z] ----------------------------------------------------------------------
+[debug] [2026-10-10T03:41:48.198Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\samia\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js projects:create absen-smpn9-probolinggo -n Absen SMPN 9
+[debug] [2026-10-10T03:41:48.198Z] CLI Version:   15.33.0
+[debug] [2026-10-10T03:41:48.199Z] Platform:      win32
+[debug] [2026-10-10T03:41:48.199Z] Node Version:  v24.19.0
+[debug] [2026-10-10T03:41:48.199Z] Detected Agent: antigravity
+[debug] [2026-10-10T03:41:48.199Z] Time:          Sat Oct 10 2026 10:41:48 GMT+0700 (Western Indonesia Time)
+[debug] [2026-10-10T03:41:48.199Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-10-10T03:41:48.206Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-10-10T03:41:48.207Z] > authorizing via signed-in user (arkhanzaazs020911@gmail.com)
+[debug] [2026-10-10T03:41:48.229Z] Checked if tokens are valid: true, expires at: 1791607141157
+[debug] [2026-10-10T03:41:48.230Z] Checked if tokens are valid: true, expires at: 1791607141157
+[debug] [2026-10-10T03:41:48.232Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects [none]
+[debug] [2026-10-10T03:41:48.232Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects {"projectId":"absen-smpn9-probolinggo","name":"Absen SMPN 9"}
+[debug] [2026-10-10T03:41:48.970Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects 200
+[debug] [2026-10-10T03:41:48.971Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects {"name":"operations/create_project.global.5471481876980209795"}
+[debug] [2026-10-10T03:41:48.972Z] Checked if tokens are valid: true, expires at: 1791607141157
+[debug] [2026-10-10T03:41:48.972Z] Checked if tokens are valid: true, expires at: 1791607141157
+[debug] [2026-10-10T03:41:48.972Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.5471481876980209795 [none]
+[debug] [2026-10-10T03:41:50.279Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.5471481876980209795 200
+[debug] [2026-10-10T03:41:50.280Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.5471481876980209795 {"name":"operations/create_project.global.5471481876980209795"}
+[debug] [2026-10-10T03:41:50.788Z] [Project Creation Poller] Retrying task index 0
+[debug] [2026-10-10T03:41:50.789Z] Checked if tokens are valid: true, expires at: 1791607141157
+[debug] [2026-10-10T03:41:50.789Z] Checked if tokens are valid: true, expires at: 1791607141157
+[debug] [2026-10-10T03:41:50.789Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.5471481876980209795 [none]
+[debug] [2026-10-10T03:41:51.188Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.5471481876980209795 200
+[debug] [2026-10-10T03:41:51.188Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/operations/create_project.global.5471481876980209795 {"name":"operations/create_project.global.5471481876980209795","metadata":{"@type":"type.googleapis.com/google.cloudresourcemanager.v1.ProjectCreationStatus","gettable":true,"ready":true},"done":true,"response":{"@type":"type.googleapis.com/google.cloudresourcemanager.v1.Project","projectNumber":"494667009300","projectId":"absen-smpn9-probolinggo","lifecycleState":"ACTIVE","name":"Absen SMPN 9","createTime":"2026-10-10T03:41:48.765Z"}}
+[debug] [2026-10-10T03:41:51.189Z] Checked if tokens are valid: true, expires at: 1791607141157
+[debug] [2026-10-10T03:41:51.190Z] Checked if tokens are valid: true, expires at: 1791607141157
+[debug] [2026-10-10T03:41:51.190Z] >>> [apiv2][query] POST https://firebase.googleapis.com/v1beta1/projects/absen-smpn9-probolinggo:addFirebase [none]
+[debug] [2026-10-10T03:41:53.095Z] <<< [apiv2][status] POST https://firebase.googleapis.com/v1beta1/projects/absen-smpn9-probolinggo:addFirebase 403
+[debug] [2026-10-10T03:41:53.095Z] <<< [apiv2][body] POST https://firebase.googleapis.com/v1beta1/projects/absen-smpn9-probolinggo:addFirebase {"error":{"code":403,"message":"The caller does not have permission","status":"PERMISSION_DENIED"}}
+[debug] [2026-10-10T03:41:53.096Z] Request to https://firebase.googleapis.com/v1beta1/projects/absen-smpn9-probolinggo:addFirebase had HTTP Error: 403, The caller does not have permission
+[debug] [2026-10-10T03:41:53.480Z] FirebaseError: Request to https://firebase.googleapis.com/v1beta1/projects/absen-smpn9-probolinggo:addFirebase had HTTP Error: 403, The caller does not have permission
+    at responseToError (C:\Users\samia\AppData\Roaming\npm\node_modules\firebase-tools\lib\responseToError.js:53:12)
+    at RetryOperation._fn (C:\Users\samia\AppData\Roaming\npm\node_modules\firebase-tools\lib\apiv2.js:415:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+[error] 
+[error] Error: Failed to add Firebase to Google Cloud Platform project. See firebase-debug.log for more info.
