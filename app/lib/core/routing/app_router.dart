@@ -6,6 +6,7 @@ import '../../features/auth/domain/app_user.dart';
 import '../../features/guru/presentation/screens/guru_dashboard_screen.dart';
 import '../../features/siswa/presentation/screens/siswa_dashboard_screen.dart';
 import '../../features/ortu/presentation/screens/ortu_dashboard_screen.dart';
+import '../../features/moderator/presentation/screens/moderator_dashboard_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authControllerProvider);
@@ -59,7 +60,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/moderator',
-        builder: (context, state) => const DummyScreen(title: 'Dashboard Moderator'),
+        builder: (context, state) => const ModeratorDashboardScreen(),
       ),
     ],
   );
@@ -84,6 +85,7 @@ class DummyScreen extends ConsumerWidget {
     );
   }
 }
+
 
 
 

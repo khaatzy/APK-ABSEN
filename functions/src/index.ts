@@ -383,3 +383,60 @@ export const submitAttendance = functions.https.onCall(async (data, context) => 
   };
 });
 
+
+// Helper untuk mencatat log aktivitas
+async function catatLog(uid: string, aksi: string, deskripsi: string) {
+  await admin.firestore().collection('logAktivitas').add({
+    uid,
+    aksi,
+    deskripsi,
+    waktu: admin.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+// 10. Update Pengaturan Aplikasi (Moderator Only)
+export const updatePengaturan = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.role !== 'moderator') {
+    throw new functions.https.HttpsError('permission-denied', 'Hanya moderator yang berhak.');
+  }
+
+  const { batasTerlambat, jamAlpha, radiusMeter, latSekolah, lngSekolah } = data;
+  const db = admin.firestore();
+
+  await db.collection('pengaturan').doc('aplikasi').set({
+    batasTerlambat,
+    jamAlpha,
+    radiusMeter,
+    lokasiSekolah: { lat: latSekolah, lng: lngSekolah },
+    terakhirDiubah: admin.firestore.FieldValue.serverTimestamp(),
+    diubahOleh: context.auth.uid
+  }, { merge: true });
+
+  await catatLog(context.auth.uid, 'UPDATE_PENGATURAN', 'Moderator mengubah pengaturan geofence dan jam absen.');
+
+  return { success: true };
+});
+
+// 11. Koreksi Absensi Manual (Moderator Only)
+export const koreksiAbsensi = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.role !== 'moderator') {
+    throw new functions.https.HttpsError('permission-denied', 'Hanya moderator yang berhak.');
+  }
+
+  const { siswaId, tanggal, status, alasan } = data;
+  const db = admin.firestore();
+  
+  const absensiId = $ {tanggal}_$ {siswaId};
+  await db.collection('absensi').doc(absensiId).set({
+    siswaId,
+    tanggal,
+    status,
+    koreksiOleh: context.auth.uid,
+    alasanKoreksi: alasan,
+    waktuScan: admin.firestore.FieldValue.serverTimestamp() // Jam dikoreksi
+  }, { merge: true });
+
+  await catatLog(context.auth.uid, 'KOREKSI_ABSENSI', Moderator mengoreksi absen siswa $ {siswaId} pada $ {tanggal} menjadi $ {status}. Alasan: $ {alasan});
+
+  return { success: true };
+});
