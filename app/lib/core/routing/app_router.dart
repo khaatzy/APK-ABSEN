@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/domain/app_user.dart';
+import '../../features/guru/presentation/screens/guru_dashboard_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authControllerProvider);
@@ -48,7 +49,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/guru',
-        builder: (context, state) => const DummyScreen(title: 'Dashboard Guru'),
+        builder: (context, state) => const GuruDashboardScreen(),
       ),
       GoRoute(
         path: '/ortu',
@@ -81,3 +82,4 @@ class DummyScreen extends ConsumerWidget {
     );
   }
 }
+
