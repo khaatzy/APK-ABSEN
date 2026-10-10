@@ -245,3 +245,120 @@ export const prosesIzinSakit = functions.https.onCall(async (data, context) => {
 
   return { success: true };
 });
+
+// Helper: Haversine distance (meter)
+function getDistanceFromLatLonInM(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371000; // Radius bumi dalam meter
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+// 9. Submit Attendance (Dipanggil oleh Siswa)
+export const submitAttendance = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.role !== 'siswa') {
+    throw new functions.https.HttpsError('permission-denied', 'Hanya siswa yang dapat melakukan absen.');
+  }
+
+  const { qrPayload, lat, lng, akurasi } = data; // qrPayload = string JSON dari QR
+  const siswaId = context.auth.uid;
+  const db = admin.firestore();
+
+  // 1. Cek akurasi GPS
+  if (akurasi > 100) {
+    throw new functions.https.HttpsError('failed-precondition', 'Akurasi lokasi terlalu buruk. Cari sinyal GPS yang lebih baik.');
+  }
+
+  let parsedQr: any;
+  try {
+    parsedQr = JSON.parse(qrPayload);
+  } catch (e) {
+    throw new functions.https.HttpsError('invalid-argument', 'Format QR tidak valid.');
+  }
+  const guruId = parsedQr.g;
+  const token = parsedQr.t;
+
+  // 2. Waktu server saat ini (Asia/Jakarta)
+  const now = new Date();
+  const options = { timeZone: 'Asia/Jakarta', hour12: false };
+  const dateStr = now.toLocaleString('en-CA', options).split(',')[0]; // YYYY-MM-DD
+  const timeStr = now.toLocaleTimeString('en-GB', options); // HH:mm:ss
+
+  // 3. Cek apakah ini hari sekolah & jam valid (dari pengaturan)
+  const settingsDoc = await db.collection('pengaturan').doc('aplikasi').get();
+  if (!settingsDoc.exists) throw new functions.https.HttpsError('internal', 'Pengaturan sistem tidak ditemukan.');
+  const settings = settingsDoc.data()!;
+  
+  // (Asumsi hari libur dan jam batas disimpan di pengaturan. Contoh fallback default:)
+  const batasTerlambat = settings.batasTerlambat || '07:00:00';
+  const jamAlpha = settings.jamAlpha || '10:00:00';
+  const radiusMeter = settings.radiusMeter || 100;
+  const latSekolah = settings.lokasiSekolah?.lat || -7.750;
+  const lngSekolah = settings.lokasiSekolah?.lng || 113.210;
+
+  if (timeStr >= jamAlpha) {
+    throw new functions.https.HttpsError('out-of-range', 'Anda sudah lewat jam batas. Absen ditolak.');
+  }
+
+  // 4. Validasi Jarak (Geofencing)
+  const jarak = getDistanceFromLatLonInM(lat, lng, latSekolah, lngSekolah);
+  if (jarak > radiusMeter) {
+    throw new functions.https.HttpsError('out-of-range', Anda berada di luar area sekolah (jarak $ {Math.round(jarak)}m));
+  }
+
+  // 5. Validasi Token QR Guru
+  const qrDoc = await db.collection('qrHarian').doc(guruId).get();
+  if (!qrDoc.exists) throw new functions.https.HttpsError('not-found', 'QR Guru tidak ditemukan.');
+  
+  const qrData = qrDoc.data()!;
+  if (qrData.tanggal !== dateStr || qrData.token !== token) {
+    throw new functions.https.HttpsError('invalid-argument', 'QR tidak valid atau sudah kedaluwarsa.');
+  }
+
+  // 6. Cek Data Siswa
+  const siswaDoc = await db.collection('users').doc(siswaId).get();
+  const kelasId = siswaDoc.data()?.kelasId;
+
+  // 7. Simpan Absen (Transaksi untuk mencegah duplikasi di hari yang sama)
+  const absensiId = $ {dateStr}_$ {siswaId};
+  const absensiRef = db.collection('absensi').doc(absensiId);
+
+  const statusAbsen = timeStr <= batasTerlambat ? 'hadir' : 'terlambat';
+
+  await db.runTransaction(async (transaction) => {
+    const doc = await transaction.get(absensiRef);
+    if (doc.exists) {
+      throw new functions.https.HttpsError('already-exists', 'Anda sudah absen hari ini!');
+    }
+    transaction.set(absensiRef, {
+      siswaId,
+      kelasId,
+      guruId,
+      tanggal: dateStr,
+      waktuScan: admin.firestore.FieldValue.serverTimestamp(),
+      status: statusAbsen,
+      lokasi: { lat, lng },
+      akurasiMeter: akurasi
+    });
+  });
+
+  // 8. Kirim Notifikasi ke Orang Tua (Jika ada)
+  // (Akan dieksekusi asinkron agar respon absen cepat)
+  const verifOrtuSnap = await db.collection('verifikasiOrtu')
+    .where('siswaId', '==', siswaId)
+    .where('status', '==', 'disetujui')
+    .get();
+  
+  const parentIds = verifOrtuSnap.docs.map(d => d.data().ortuId);
+  // (Logika FCM diletakkan di sini, menggunakan firebase-admin/messaging)
+  
+  return { 
+    success: true, 
+    status: statusAbsen, 
+    waktu: timeStr 
+  };
+});

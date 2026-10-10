@@ -4,6 +4,7 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/domain/app_user.dart';
 import '../../features/guru/presentation/screens/guru_dashboard_screen.dart';
+import '../../features/siswa/presentation/screens/siswa_dashboard_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authControllerProvider);
@@ -45,7 +46,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Dummy routes sementara untuk masing-masing role
       GoRoute(
         path: '/siswa',
-        builder: (context, state) => const DummyScreen(title: 'Dashboard Siswa'),
+        builder: (context, state) => const SiswaDashboardScreen(),
       ),
       GoRoute(
         path: '/guru',
@@ -82,4 +83,5 @@ class DummyScreen extends ConsumerWidget {
     );
   }
 }
+
 
