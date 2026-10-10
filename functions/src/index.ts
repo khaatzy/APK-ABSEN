@@ -354,7 +354,27 @@ export const submitAttendance = functions.https.onCall(async (data, context) => 
     .get();
   
   const parentIds = verifOrtuSnap.docs.map(d => d.data().ortuId);
-  // (Logika FCM diletakkan di sini, menggunakan firebase-admin/messaging)
+    if (parentIds.length > 0) {
+    const tokens: string[] = [];
+    for (const pId of parentIds) {
+      const parentDoc = await db.collection('users').doc(pId).get();
+      const pTokens = parentDoc.data()?.fcmTokens || [];
+      tokens.push(...pTokens);
+    }
+    
+    if (tokens.length > 0) {
+      const payload = {
+        notification: {
+          title: 'Siswa telah absen ?',
+          body: 'Ketuk untuk melihat lokasi.',
+        }
+      };
+      await admin.messaging().sendEachForMulticast({
+        tokens: tokens,
+        notification: payload.notification,
+      });
+    }
+  }
   
   return { 
     success: true, 
@@ -362,3 +382,4 @@ export const submitAttendance = functions.https.onCall(async (data, context) => 
     waktu: timeStr 
   };
 });
+
