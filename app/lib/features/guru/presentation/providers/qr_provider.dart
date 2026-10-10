@@ -1,18 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
 
-// Menghasilkan payload QR yang aman dan unik per hari per guru
-final dailyQrProvider = Provider.autoDispose<String?>((ref) {
-  final authState = ref.watch(authControllerProvider);
-  final user = authState.value;
+// Provider yang nge-fetch (listen) ke Firestore qrHarian/{guruId}
+final dailyQrProvider = StreamProvider.autoDispose<String?>((ref) {
+  final user = ref.watch(authControllerProvider).value;
 
-  if (user == null || user.uid.isEmpty) return null;
+  if (user == null || user.uid.isEmpty || user.role.name != 'guru') {
+    return Stream.value(null);
+  }
 
-  // Format: ABSEN_IDGURU_YYYYMMDD
-  // Contoh: ABSEN_guru123_20261010
-  final dateStr = DateFormat('yyyyMMdd').format(DateTime.now());
-  final qrPayload = 'ABSEN__';
-  
-  return qrPayload;
+  // Mengikuti diagram: G -> DB (Ambil token QR hari ini)
+  return FirebaseFirestore.instance
+      .collection('qrHarian')
+      .doc(user.uid)
+      .snapshots()
+      .map((doc) {
+    if (doc.exists && doc.data() != null) {
+      // Ambil token yang sudah digenerate oleh Cloud Functions
+      return doc.data()!['token'] as String?;
+    }
+    return null;
+  });
 });

@@ -110,3 +110,37 @@ export const setWaliKelas = functions.https.onCall(async (data, context) => {
 
   return { success: true };
 });
+
+// 5. Scheduled Function: Generate Token QR Harian tiap jam 00:00 WIB
+import { onSchedule } from 'firebase-functions/v2/scheduler';
+import * as crypto from 'crypto';
+
+export const generateDailyQR = onSchedule({
+  schedule: 'every day 00:00',
+  timeZone: 'Asia/Jakarta'
+}, async (event) => {
+  const db = admin.firestore();
+  
+  // Ambil semua user dengan role = guru
+  const guruSnapshot = await db.collection('users').where('role', '==', 'guru').get();
+  
+  const batch = db.batch();
+  const dateStr = new Date().toLocaleString('en-CA', { timeZone: 'Asia/Jakarta' }).split(',')[0]; // Format YYYY-MM-DD
+
+  guruSnapshot.forEach((doc) => {
+    const guruId = doc.id;
+    // Generate random token yang sulit ditebak
+    const token = crypto.randomBytes(16).toString('hex');
+    
+    const qrRef = db.collection('qrHarian').doc(guruId);
+    batch.set(qrRef, {
+      token: token,
+      tanggal: dateStr,
+      // Token harian berlaku sampai jam 23:59:59 di hari yang sama
+      berlakuSampai: admin.firestore.Timestamp.fromDate(new Date($dateStrT23:59:59+07:00))
+    });
+  });
+
+  await batch.commit();
+  console.log(Berhasil membuat token QR harian untuk $ {guruSnapshot.size} guru.);
+});
