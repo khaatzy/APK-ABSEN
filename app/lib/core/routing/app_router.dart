@@ -5,6 +5,7 @@ import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/domain/app_user.dart';
 import '../../features/guru/presentation/screens/guru_dashboard_screen.dart';
 import '../../features/siswa/presentation/screens/siswa_dashboard_screen.dart';
+import '../../features/ortu/presentation/screens/ortu_dashboard_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authControllerProvider);
@@ -83,5 +84,6 @@ class DummyScreen extends ConsumerWidget {
     );
   }
 }
+
 
 
