@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false; // Default deny
+    }
+    
+    // Foto Verifikasi & Izin (Maks 5MB)
+    match /verifikasi/{ortuId}/{verifId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == ortuId 
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

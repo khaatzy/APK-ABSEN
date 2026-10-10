@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default Deny All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Fungsi Helpers
+    function isLogin() { return request.auth != null; }
+    function isSiswa() { return isLogin() && request.auth.token.role == 'siswa'; }
+    function isGuru() { return isLogin() && request.auth.token.role == 'guru'; }
+    function isModerator() { return isLogin() && request.auth.token.role == 'moderator'; }
+    function isOrtu() { return isLogin() && request.auth.token.role == 'ortu'; }
+
+    // Users (Siswa, Guru, Ortu)
+    match /users/{userId} {
+      // Ortu hanya baca anak di anakIds (disederhanakan), Guru baca semua siswa, Moderator baca semua
+      allow read: if isLogin() && (request.auth.uid == userId || isGuru() || isModerator());
+      allow write: if isModerator();
+    }
+
+    // Absensi (HANYA CLOUD FUNCTION YANG BOLEH MENULIS)
+    match /absensi/{docId} {
+      allow read: if isModerator() || isGuru() || (isSiswa() && resource.data.siswaId == request.auth.uid);
+      allow write: if false; // 100% dicegah, absensi hanya via submitAttendance (Cloud Functions)
+    }
+
+    // QR Harian
+    match /qrHarian/{guruId} {
+      allow read: if isLogin() && request.auth.uid == guruId;
+      allow write: if false; // Hanya via Cloud Functions cron job / resetQr
+    }
+    
+    // Pengaturan
+    match /pengaturan/{docId} {
+      allow read: if isLogin();
+      allow write: if isModerator();
+    }
+
+    // Verifikasi Ortu & Izin (Boleh ditulis oleh client, diubah statusnya via CF)
+    match /verifikasiOrtu/{docId} {
+      allow read: if isLogin() && (request.auth.uid == resource.data.ortuId || isGuru() || isModerator());
+      allow create: if isOrtu();
+      allow update, delete: if false;
+    }
+    
+    match /pengajuanIzin/{docId} {
+      allow read: if isLogin() && (request.auth.uid == resource.data.ortuId || isGuru() || isModerator() || (isSiswa() && resource.data.siswaId == request.auth.uid));
+      allow create: if isOrtu();
+      allow update, delete: if false;
+    }
+  }
+}

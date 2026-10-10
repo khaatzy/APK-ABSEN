@@ -440,3 +440,64 @@ export const koreksiAbsensi = functions.https.onCall(async (data, context) => {
 
   return { success: true };
 });
+
+// 12. Auto Alpha (Misal: dijalankan tiap jam 10:00 WIB, bisa disesuaikan)
+import { onSchedule } from 'firebase-functions/v2/scheduler';
+
+export const autoAlphaRoutine = onSchedule({
+  schedule: 'every day 10:00',
+  timeZone: 'Asia/Jakarta'
+}, async (event) => {
+  const db = admin.firestore();
+  
+  // 1. Cek pengaturan apakah hari ini libur
+  const options = { timeZone: 'Asia/Jakarta', hour12: false };
+  const dateStr = new Date().toLocaleString('en-CA', options).split(',')[0];
+  
+  // Asumsi: jika hari Sabtu/Minggu libur, hentikan.
+  const dayOfWeek = new Date().getDay();
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    console.log('Hari libur akhir pekan, Auto Alpha dibatalkan.');
+    return;
+  }
+
+  // 2. Ambil semua siswa aktif
+  const siswaSnap = await db.collection('users').where('role', '==', 'siswa').where('aktif', '==', true).get();
+  if (siswaSnap.empty) return;
+
+  const batch = db.batch();
+  let count = 0;
+
+  for (const doc of siswaSnap.docs) {
+    const siswaId = doc.id;
+    const absensiId = $ {dateStr}_$ {siswaId};
+    
+    // Cek apakah sudah absen atau punya izin
+    const absenDoc = await db.collection('absensi').doc(absensiId).get();
+    
+    if (!absenDoc.exists) {
+      // Siswa tidak absen dan tidak ada izin yang disetujui, tandai ALPHA
+      batch.set(db.collection('absensi').doc(absensiId), {
+        siswaId: siswaId,
+        kelasId: doc.data().kelasId,
+        tanggal: dateStr,
+        status: 'alpha',
+        waktuScan: admin.firestore.FieldValue.serverTimestamp(),
+        catatan: 'Otomatis dari sistem'
+      });
+      count++;
+      
+      // Jika batch sudah mencapai 490, commit dan buat batch baru (Firestore limit 500)
+      if (count === 490) {
+        await batch.commit();
+        count = 0;
+      }
+    }
+  }
+  
+  if (count > 0) {
+    await batch.commit();
+  }
+
+  console.log(Auto Alpha selesai. $ {count} siswa ditandai Alpha.);
+});
